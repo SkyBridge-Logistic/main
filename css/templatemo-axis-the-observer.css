@@ -237,10 +237,10 @@ https://templatemo.com/tm-619-axis-industrial
 .sidebar__log-entry:hover { background: rgba(255,255,255,0.03); }
 .sidebar__log-time { color: rgba(255,255,255,0.12); flex-shrink: 0; font-size: 0.52rem; min-width: 5.5em; }
 .sidebar__log-tag { font-size: 0.48rem; text-transform: uppercase; letter-spacing: 0.08em; padding: 0.1em 0.35em; border: 1px solid; flex-shrink: 0; }
-.log-ok   { color: var(--term-green); border-color: rgba(0,255,102,0.25); }
-.log-warn { color: var(--term-amber); border-color: rgba(255,170,0,0.25); }
-.log-sys  { color: var(--safety);     border-color: rgba(255,62,0,0.25); }
-.log-info { color: #66AAFF;           border-color: rgba(102,170,255,0.25); }
+.log-Delivered   { color: var(--term-green); border-color: rgba(0,255,102,0.25); }
+.log-On the road { color: var(--term-amber); border-color: rgba(255,170,0,0.25); }
+.log-Border  { color: var(--safety);     border-color: rgba(255,62,0,0.25); }
+.log-Loading { color: #66AAFF;           border-color: rgba(102,170,255,0.25); }
 .sidebar__log-msg { color: rgba(255,255,255,0.4); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .sidebar__log::before, .sidebar__log::after { content: ''; position: absolute; left: 0; right: 0; height: 30px; z-index: 2; pointer-events: none; }

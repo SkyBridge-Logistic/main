@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SkyBridge Logistic</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+<style>
+:root{
+  --bg:#0b1020;
+  --panel:#111827;
+  --panel2:#151d31;
+  --panel3:#1a2340;
+  --line:rgba(255,255,255,.08);
+  --line2:rgba(255,255,255,.12);
+  --text:#f5f7fb;
+  --muted:#a5b1c4;
+  --orange:#ff9f43;
+  --orange-2:#f97316;
+  --orange-3:#c2410c;
+  --good:#fb923c;
+  --shadow:0 18px 50px rgba(0,0,0,.32);
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:'Inter',sans-serif}
+#map{width:100vw;height:100vh}
+
+.topbar{
+  position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:1200;
+  width:min(1240px,calc(100vw - 20px));
+  display:grid;
+  grid-template-columns:1.3fr repeat(6,minmax(0,1fr));
+  gap:8px;
+  padding:8px;
+  background:rgba(17,24,39,.92);
+  border:1px solid var(--line);
+  border-radius:16px;
+  box-shadow:var(--shadow);
+  backdrop-filter:blur(10px);
+}
+.brand{display:flex;align-items:center;gap:10px;min-width:0;padding:4px 6px}
+.brand-mark{width:32px;height:32px;border-radius:10px;background:linear-gradient(135deg,var(--orange-2),#fb923c);display:grid;place-items:center;color:#fff;font-size:15px;flex:none;box-shadow:0 10px 20px rgba(249,115,22,.22)}
+.brand-copy{min-width:0}
+.brand h1{font-size:14px;line-height:1.1;font-weight:800;letter-spacing:-.03em}
+.brand p{font-size:9px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kpi-chip{background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line);border-radius:12px;padding:7px 8px;min-width:0;box-shadow:0 1px 0 rgba(255,255,255,.03) inset}
+.kpi-chip .k{font-size:8px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.kpi-chip .v{margin-top:4px;font-size:12px;font-weight:800;line-height:1}
+.kpi-chip .s{margin-top:2px;font-size:7px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+.sidebar{
+  position:absolute;top:58px;left:10px;z-index:1100;
+  width:260px;max-height:calc(100vh - 68px);overflow:auto;
+  background:rgba(17,24,39,.94);
+  border:1px solid var(--line);
+  border-radius:16px;
+  box-shadow:var(--shadow);
+  backdrop-filter:blur(10px)
+}
+.sidebar::-webkit-scrollbar,.right-panel::-webkit-scrollbar{width:7px}
+.sidebar::-webkit-scrollbar-thumb,.right-panel::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:999px}
+.section{padding:8px 9px;border-bottom:1px solid var(--line)}
+.section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.section-head h2{font-size:8px;color:#d9e2f2;text-transform:uppercase;letter-spacing:.14em}
+.live{display:flex;align-items:center;gap:5px;font-size:9px;color:var(--muted)}
+.live i{width:6px;height:6px;border-radius:50%;background:var(--good);box-shadow:0 0 0 4px rgba(251,146,60,.1)}
+.badges{display:flex;flex-wrap:wrap;gap:5px}
+.badge{padding:3px 6px;border-radius:999px;background:linear-gradient(180deg,var(--panel3),var(--panel2));border:1px solid var(--line);color:#d3dce8;font-size:8px;line-height:1}
+.kpis{display:grid;grid-template-columns:repeat(2,1fr);gap:5px}
+.kpi{padding:6px 7px;border-radius:10px;background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line)}
+.kpi .label{font-size:7px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:4px}
+.kpi .value{font-size:12px;font-weight:800;line-height:1}
+.kpi .sub{margin-top:2px;font-size:7px;color:var(--muted);line-height:1.15}
+.good{color:#fdba74}.info{color:#fb923c}.warn{color:#fdba74}.bad{color:#f9a8d4}
+.summary{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.summary-card{padding:6px 7px;border-radius:10px;background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line)}
+.summary-card .k{font-size:7px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.summary-card .v{margin-top:2px;font-size:10px;font-weight:800;line-height:1.1}
+.summary-card .s{margin-top:2px;font-size:7px;color:var(--muted);line-height:1.15}
+.route-table{width:100%;border-collapse:collapse;font-size:8px}
+.route-table th,.route-table td{padding:4px 2px;border-bottom:1px solid rgba(255,255,255,.06);text-align:left;white-space:nowrap;vertical-align:middle;line-height:1.05}
+.route-table th{font-size:7px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.route-table td{color:#e9edf5}
+.route-table tr:hover td{background:rgba(255,255,255,.03);cursor:pointer}
+.dot{width:5px;height:5px;border-radius:50%;display:inline-block;margin-right:5px;vertical-align:middle}
+.status{display:inline-flex;align-items:center;padding:2px 4px;border-radius:999px;background:rgba(251,146,60,.08);border:1px solid rgba(251,146,60,.18);color:#fdba74;font-size:7px;font-weight:700;letter-spacing:.03em}
+.details{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.detail{padding:6px 7px;border-radius:10px;background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line)}
+.detail .k{font-size:7px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.detail .v{margin-top:2px;font-size:10px;font-weight:800;line-height:1.1}
+.detail .s{margin-top:2px;font-size:7px;color:var(--muted);line-height:1.15}
+
+.right-panel{position:absolute;top:58px;right:10px;z-index:1100;width:220px;max-height:calc(100vh - 68px);overflow:auto;display:flex;flex-direction:column;gap:6px}
+.card{background:rgba(17,24,39,.94);border:1px solid var(--line);border-radius:16px;padding:8px 8px 7px;box-shadow:var(--shadow);backdrop-filter:blur(10px)}
+.card h3{font-size:8px;text-transform:uppercase;letter-spacing:.14em;color:#d9e2f2;margin-bottom:6px}
+.timeline,.shift-list{display:flex;flex-direction:column;gap:5px}
+.timeline-item{display:grid;grid-template-columns:11px 1fr;gap:6px;align-items:start}
+.timeline-line{position:relative;width:11px;display:flex;justify-content:center}
+.timeline-line::before{content:'';position:absolute;top:0;bottom:-5px;width:2px;background:rgba(255,255,255,.08)}
+.timeline-dot{width:7px;height:7px;border-radius:50%;background:#7b8aa1;position:relative;z-index:1;top:1px}
+.timeline-item.active .timeline-dot{background:var(--orange);box-shadow:0 0 0 4px rgba(251,146,60,.12)}
+.timeline-item.done .timeline-dot{background:#c8d3e0}
+.timeline-item .t-title{font-size:8px;font-weight:700;line-height:1.05}
+.timeline-item .t-sub{font-size:7px;color:var(--muted);margin-top:2px;line-height:1.15}
+.telemetry{display:grid;grid-template-columns:repeat(2,1fr);gap:4px}
+.telemetry-card{background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line);border-radius:10px;padding:6px}
+.telemetry-card .k{font-size:7px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.telemetry-card .v{margin-top:2px;font-size:10px;font-weight:800;line-height:1}
+.telemetry-card .s{margin-top:2px;font-size:7px;color:var(--muted);line-height:1.15}
+.bar{margin-top:4px;height:4px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden}
+.bar>span{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,var(--orange-3),var(--orange))}
+.eta-box{display:grid;grid-template-columns:1fr 1fr;gap:4px}
+.eta-card{padding:6px;border-radius:10px;background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line)}
+.eta-card .k{font-size:7px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.eta-card .v{margin-top:2px;font-size:10px;font-weight:800;line-height:1}
+.eta-card .s{margin-top:2px;font-size:7px;color:var(--muted);line-height:1.15}
+.shift-item{display:flex;align-items:center;justify-content:space-between;gap:6px;background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line);border-radius:10px;padding:6px 7px}
+.shift-left{display:flex;flex-direction:column;gap:2px;min-width:0}
+.shift-name{font-size:8px;font-weight:700;line-height:1.05}
+.shift-meta{font-size:7px;color:var(--muted);line-height:1.15}
+.shift-state{font-size:7px;text-transform:uppercase;letter-spacing:.08em;padding:2px 4px;border-radius:999px;border:1px solid rgba(251,146,60,.18);background:rgba(251,146,60,.08);color:#fdba74;font-weight:700;flex:none}
+.shift-state.rest{border-color:rgba(245,158,11,.18);background:rgba(245,158,11,.08);color:#fbbf24}
+
+.route-tip{background:#111827;color:#f5f7fb;border:1px solid rgba(255,255,255,.1);border-radius:10px;box-shadow:0 8px 18px rgba(0,0,0,.28)}
+.route-tip .leaflet-tooltip-content{font-size:9px;line-height:1.2}
+.leaflet-container{background:#0b1020}
+.leaflet-control-attribution{background:rgba(17,24,39,.84)!important;color:#a5b1c4!important}
+.stop-marker{width:6px;height:6px;border-radius:50%;border:2px solid rgba(255,255,255,.7)}
+.start-marker{background:#7b8aa1}.end-marker{background:var(--orange)}
+.cluster-label{background:#111827;border:1px solid rgba(255,255,255,.1);color:#f5f7fb;border-radius:999px;padding:3px 6px;font-size:8px;box-shadow:0 8px 18px rgba(0,0,0,.28)}
+.route-dot-marker{
+  width:10px;height:10px;border-radius:50%;
+  background:linear-gradient(180deg,var(--orange),var(--orange-2));
+  border:1px solid rgba(255,255,255,.5);
+  box-shadow:0 0 0 5px rgba(251,146,60,.10), 0 0 18px rgba(249,115,22,.35);
+}
+
+@media (max-width:1200px){.topbar{grid-template-columns:1fr 1fr 1fr;gap:6px}.brand{grid-column:1/-1}}
+@media (max-width:1100px){.sidebar{width:calc(100vw - 20px);max-height:40vh}.right-panel{display:none}}
+</style>
+</head>
+<body>
+<div id="map"></div>
+
+<div class="topbar">
+  <div class="brand">
+    <div class="brand-mark">◆</div>
+    <div class="brand-copy">
+      <h1>SkyBridge Logistic</h1>
+      <p>Enterprise control room</p>
+    </div>
+  </div>
+  <div class="kpi-chip"><div class="k">Active loads</div><div class="v" id="tb-loads">0</div><div class="s">Live freight</div></div>
+  <div class="kpi-chip"><div class="k">Nodes online</div><div class="v" id="tb-trucks">0</div><div class="s">Moving points</div></div>
+  <div class="kpi-chip"><div class="k">Avg ETA</div><div class="v" id="tb-eta">—</div><div class="s">Rolling forecast</div></div>
+  <div class="kpi-chip"><div class="k">Traffic</div><div class="v" id="tb-traffic">LIVE</div><div class="s">Congestion score</div></div>
+  <div class="kpi-chip"><div class="k">On-time</div><div class="v" id="tb-ontime">—</div><div class="s">Reliability</div></div>
+  <div class="kpi-chip"><div class="k">Clusters</div><div class="v" id="tb-clusters">—</div><div class="s">Fleet grouping</div></div>
+</div>
+
+<div class="sidebar">
+  <div class="section">
+    <div class="section-head"><h2>Operational metrics</h2><div class="live"><i></i> live</div></div>
+    <div class="badges"><div class="badge">Real road routing</div><div class="badge">Smart rerouting</div><div class="badge">Orange dark theme</div><div class="badge">Fleet intelligence</div></div>
+  </div>
+  <div class="section">
+    <div class="section-head"><h2>Network Summary</h2></div>
+    <div class="summary">
+      <div class="summary-card"><div class="k">Region</div><div class="v" id="summary-region">North America + Europe</div><div class="s">A single circuit</div></div>
+      <div class="summary-card"><div class="k">Load</div><div class="v" id="summary-load">—</div><div class="s"></div>Route density</div>
+      <div class="summary-card"><div class="k">Routing</div><div class="v">Road-based</div><div class="s">On the road network</div></div>
+      <div class="summary-card"><div class="k">Traffic</div><div class="v" id="summary-traffic">LIVE</div><div class="s">Corridors and traffic volume</div></div>
+    </div>
+  </div>
+  <div class="section"><div class="section-head"><h2>Active Routes</h2></div><table class="route-table"><thead><tr><th>Route</th><th>Distance</th><th>Status</th></tr></thead><tbody id="route-table-body"></tbody></table></div>
+  <div class="section"><div class="section-head"><h2>Flight details</h2></div><div class="details" id="details-grid"></div></div>
+</div>
+
+<div class="right-panel">
+  <div class="card"><h3>Flight Timeline</h3><div class="timeline" id="timeline"></div></div>
+  <div class="card"><h3>Live telemetry</h3><div class="telemetry" id="telemetry"></div></div>
+  <div class="card"><h3>ETA prediction</h3><div class="eta-box" id="eta-box"></div></div>
+  <div class="card"><h3>Driver shifts</h3><div class="shift-list" id="shift-list"></div></div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const map = L.map('map', { zoomControl:true, worldCopyJump:true, preferCanvas:true }).setView([44,-40], 3);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution:'&copy; OpenStreetMap &copy; CARTO' }).addTo(map);
+
+const routes = [
+  {name:'New York → Chicago',from:[40.7128,-74.0060],to:[41.8781,-87.6298],color:'#f97316'},
+  {name:'Los Angeles → Dallas',from:[34.0522,-118.2437],to:[32.7767,-96.7970],color:'#fb923c'},
+  {name:'Seattle → Denver',from:[47.6062,-122.3321],to:[39.7392,-104.9903],color:'#f59e0b'},
+  {name:'Miami → Atlanta',from:[25.7617,-80.1918],to:[33.7490,-84.3880],color:'#c2410c'},
+  {name:'Boston → Washington',from:[42.3601,-71.0589],to:[38.9072,-77.0369],color:'#fdba74'},
+  {name:'San Francisco → Phoenix',from:[37.7749,-122.4194],to:[33.4484,-112.0740],color:'#fb923c'},
+  {name:'Houston → Nashville',from:[29.7604,-95.3698],to:[36.1627,-86.7816],color:'#f97316'},
+  {name:'Dallas → St. Louis',from:[32.7767,-96.7970],to:[38.6270,-90.1994],color:'#fdba74'},
+  {name:'Phoenix → Las Vegas',from:[33.4484,-112.0740],to:[36.1699,-115.1398],color:'#ea580c'},
+  {name:'Detroit → Minneapolis',from:[42.3314,-83.0458],to:[44.9778,-93.2650],color:'#f59e0b'},
+  {name:'San Diego → Los Angeles',from:[32.7157,-117.1611],to:[34.0522,-118.2437],color:'#fb923c'},
+  {name:'Portland → Salt Lake City',from:[45.5152,-122.6784],to:[40.7608,-111.8910],color:'#f97316'},
+  {name:'Denver → Kansas City',from:[39.7392,-104.9903],to:[39.0997,-94.5786],color:'#fdba74'},
+  {name:'Minneapolis → Chicago',from:[44.9778,-93.2650],to:[41.8781,-87.6298],color:'#ea580c'},
+  {name:'Toronto → Montreal',from:[43.6532,-79.3832],to:[45.5017,-73.5673],color:'#fb923c'},
+  {name:'Toronto → Ottawa',from:[43.6532,-79.3832],to:[45.4215,-75.6972],color:'#f97316'},
+  {name:'Montreal → Quebec City',from:[45.5017,-73.5673],to:[46.8139,-71.2080],color:'#fdba74'},
+  {name:'Vancouver → Calgary',from:[49.2827,-123.1207],to:[51.0447,-114.0719],color:'#f59e0b'},
+  {name:'Calgary → Edmonton',from:[51.0447,-114.0719],to:[53.5461,-113.4938],color:'#c2410c'},
+  {name:'Winnipeg → Toronto',from:[49.8951,-97.1384],to:[43.6532,-79.3832],color:'#fb923c'},
+  {name:'Berlin → Paris',from:[52.5200,13.4050],to:[48.8566,2.3522],color:'#f97316'},
+  {name:'Amsterdam → Brussels',from:[52.3676,4.9041],to:[50.8503,4.3517],color:'#fdba74'},
+  {name:'Madrid → Rome',from:[40.4168,-3.7038],to:[41.9028,12.4964],color:'#ea580c'},
+  {name:'London → Dublin',from:[51.5072,-0.1276],to:[53.3498,-6.2603],color:'#f59e0b'},
+  {name:'Vienna → Munich',from:[48.2082,16.3738],to:[48.1351,11.5820],color:'#fb923c'},
+  {name:'Copenhagen → Hamburg',from:[55.6761,12.5683],to:[53.5511,9.9937],color:'#c2410c'}
+];
+
+const state=[];
+let selectedRouteIndex=0;
+const routeLayer=L.layerGroup().addTo(map);
+const dotLayer=L.layerGroup().addTo(map);
+const clusterLayer=L.layerGroup().addTo(map);
+const heatLayer=L.layerGroup().addTo(map);
+const tbody=document.getElementById('route-table-body');
+
+const toRad=v=>v*Math.PI/180;
+const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
+const fmtKm=km=>`${Math.round(km).toLocaleString('ru-RU')} km`;
+const fmtETA=h=>h<1?`${Math.max(5,Math.round(h*60))} min`:`${h.toFixed(h<10?1:0)} h`;
+const ease=t=>0.5 - Math.cos(Math.PI*clamp(t,0,1))/2;
+function haversineKm(a,b){const R=6371,dLat=toRad(b[0]-a[0]),dLng=toRad(b[1]-a[1]),la1=toRad(a[0]),la2=toRad(b[0]);const h=Math.sin(dLat/2)**2+Math.cos(la1)*Math.cos(la2)*Math.sin(dLng/2)**2;return 2*R*Math.asin(Math.sqrt(h))}
+function buildOSRMUrl(from,to){return `https://router.project-osrm.org/route/v1/driving/${from[1]},${from[0]};${to[1]},${to[0]}?overview=full&geometries=geojson&steps=false`}
+async function fetchRouteGeometry(from,to){try{const r=await fetch(buildOSRMUrl(from,to));if(!r.ok) throw new Error();const d=await r.json();const c=d?.routes?.[0]?.geometry?.coordinates;return c&&c.length?c.map(([lng,lat])=>[lat,lng]):[from,to]}catch{return [from,to]}}
+function cumulativeDistances(path){const out=[0];for(let i=1;i<path.length;i++) out.push(out[i-1]+haversineKm(path[i-1],path[i]));return out}
+function pointAtDistance(path,cum,d){const total=cum[cum.length-1];if(d<=0) return path[0];if(d>=total) return path[path.length-1];let lo=0,hi=cum.length-1;while(lo<hi){const mid=(lo+hi)>>1;cum[mid]<d?lo=mid+1:hi=mid}const i=Math.max(1,lo),d0=cum[i-1],d1=cum[i],t=(d-d0)/(d1-d0||1);return [path[i-1][0]+(path[i][0]-path[i-1][0])*t,path[i-1][1]+(path[i][1]-path[i-1][1])*t]}
+function headingDeg(a,b){const y=Math.sin(toRad(b[1]-a[1]))*Math.cos(toRad(b[0]));const x=Math.cos(toRad(a[0]))*Math.sin(toRad(b[0]))-Math.sin(toRad(a[0]))*Math.cos(toRad(b[0]))*Math.cos(toRad(b[1]-a[1]));return (Math.atan2(y,x)*180/Math.PI+360)%360}
+function dotSvg(rotation=0){return `<svg width="14" height="14" viewBox="0 0 14 14" xmlns="http://www.w3.org/2000/svg" style="display:block;overflow:visible;transform:rotate(${rotation}deg)"><circle cx="7" cy="7" r="3.6" fill="#fb923c" stroke="#fff" stroke-width="1"/><circle cx="7" cy="7" r="6.2" fill="none" stroke="rgba(251,146,60,.15)" stroke-width="1"/></svg>`}
+function makeDotIcon(rotation=0){return L.divIcon({className:'',html:dotSvg(rotation),iconSize:[14,14],iconAnchor:[7,7]})}
+function makeStopIcon(type){return L.divIcon({className:'',html:`<div class="stop-marker ${type}-marker"></div>`,iconSize:[6,6],iconAnchor:[3,3]})}
+function trafficFactor(idx,p){const base=.14+(idx%6)*.06;const wave=.14*Math.sin(p*Math.PI*2+idx*.45);return clamp(base+wave+.14,.1,.88)}
+function timeline(p){return[{t:'Loaded',s:'Груз принят.',st:'done'},{t:'Departed',s:'Выезд.',st:p>.08?'active':'done'},{t:'Transit',s:'Коридор.',st:p>.28?'active':'done'},{t:'Fuel stop',s:'Сервис.',st:p>.62?'active':''},{t:'Delivery',s:'Разгрузка.',st:p>.92?'active':''}]}
+function telemetry(s,p){const speed=Math.round(s.speedKmh*(.92+.08*Math.sin(p*Math.PI*2+.2)));const fuel=Math.round(clamp(100-p*68-s.index*.45,8,100));const temp=Math.round(4+1.5*Math.sin(p*4));const engine=Math.round(clamp(95-p*6-s.index*.12,76,99));const hos=Math.round(clamp(11.5-p*5.5,2,11.5)*10)/10;const odo=Math.round(s.totalKm*p);return{speed,fuel,temp,engine,hos,odo}}
+function eta(s,p){const tr=trafficFactor(s.index,p);const weather=clamp(.06+(s.index%4)*.04,.05,.18);const conf=Math.round(clamp(99-tr*34-weather*22,70,99));const delay=Math.max(0,(tr*.65+weather*.35)*s.etaHours*.1);return{conf,delay,tr,weather,eta:Math.max(.2,s.etaHours-p*s.etaHours+delay)}}
+function updateTop(s,p){const e=eta(s,p);document.getElementById('tb-loads').textContent=state.length;document.getElementById('tb-trucks').textContent=state.length;document.getElementById('tb-eta').textContent=fmtETA(state.reduce((x,y)=>x+y.etaHours,0)/state.length);document.getElementById('tb-traffic').textContent=`${Math.round(e.tr*100)}%`;document.getElementById('tb-ontime').textContent=`${e.conf}%`;document.getElementById('tb-clusters').textContent=String(computeClusters());document.getElementById('summary-load').textContent=`${Math.min(99,Math.round(68+state.length*.9))}%`}
+function updateDetails(s,p){const g=document.getElementById('details-grid');const tf=trafficFactor(s.index,p);g.innerHTML=`<div class="detail"><div class="k">Маршрут</div><div class="v">${s.route.name}</div><div class="s">Real road path</div></div><div class="detail"><div class="k">Дистанция</div><div class="v">${fmtKm(s.totalKm)}</div><div class="s">Фактическая длина</div></div><div class="detail"><div class="k">Скорость</div><div class="v">${Math.round(s.speedKmh)} km/h</div><div class="s">Средний темп</div></div><div class="detail"><div class="k">Traffic</div><div class="v">${Math.round(tf*100)}%</div><div class="s">Нагрузка коридора</div></div>`}
+function renderPanels(s,p){const tl=document.getElementById('timeline'),tel=document.getElementById('telemetry'),eb=document.getElementById('eta-box'),sh=document.getElementById('shift-list');tl.innerHTML=timeline(p).map(i=>`<div class="timeline-item ${i.st}"><div class="timeline-line"><div class="timeline-dot"></div></div><div><div class="t-title">${i.t}</div><div class="t-sub">${i.s}</div></div></div>`).join('');const t=telemetry(s,p);tel.innerHTML=`<div class="telemetry-card"><div class="k">Speed</div><div class="v">${t.speed} km/h</div><div class="s">Road speed</div><div class="bar"><span style="width:${clamp(t.speed,20,110)}%"></span></div></div><div class="telemetry-card"><div class="k">Fuel</div><div class="v">${t.fuel}%</div><div class="s">Tank level</div><div class="bar"><span style="width:${t.fuel}%"></span></div></div><div class="telemetry-card"><div class="k">Temp</div><div class="v">${t.temp}°C</div><div class="s">Cargo temp</div><div class="bar"><span style="width:${clamp(35+t.temp*10,15,90)}%"></span></div></div><div class="telemetry-card"><div class="k">Engine</div><div class="v">${t.engine}%</div><div class="s">Unit health</div><div class="bar"><span style="width:${t.engine}%"></span></div></div><div class="telemetry-card" style="grid-column:1 / -1"><div class="k">HOS</div><div class="v">${t.hos} h</div><div class="s">Driving hours left</div><div class="bar"><span style="width:${clamp(t.hos/11.5*100,8,100)}%"></span></div></div><div class="telemetry-card" style="grid-column:1 / -1"><div class="k">Odometer</div><div class="v">${fmtKm(t.odo)}</div><div class="s">Distance covered</div><div class="bar"><span style="width:${clamp(t.odo/s.totalKm*100,5,100)}%"></span></div></div>`;const e=eta(s,p);eb.innerHTML=`<div class="eta-card"><div class="k">ETA</div><div class="v">${fmtETA(e.eta)}</div><div class="s">Predicted arrival</div></div><div class="eta-card"><div class="k">Confidence</div><div class="v">${e.conf}%</div><div class="s">Reliability</div></div><div class="eta-card"><div class="k">Traffic</div><div class="v">${Math.round(e.tr*100)}%</div><div class="s">Impact</div></div><div class="eta-card"><div class="k">Risk</div><div class="v">${e.delay>1?'MED':'LOW'}</div><div class="s">Traffic + weather</div></div>`;const st=p<.7?'on shift':'rest';sh.innerHTML=`<div class="shift-item"><div class="shift-left"><div class="shift-name">Driver ${String(s.index+12).padStart(2,'0')}</div><div class="shift-meta">${st==='rest'?'required':`${Math.max(2,Math.round((1-p)*8))} h to break`}</div></div><div class="shift-state ${st==='rest'?'rest':''}">${st}</div></div><div class="shift-item"><div class="shift-left"><div class="shift-name">Co-driver ${String(s.index+21).padStart(2,'0')}</div><div class="shift-meta">FMCSA compliance</div></div><div class="shift-state">online</div></div><div class="shift-item"><div class="shift-left"><div class="shift-name">Dispatch window</div><div class="shift-meta">Pickup 08–10 • delivery 14–18</div></div><div class="shift-state">active</div></div>`;updateDetails(s,p);updateTop(s,p)}
+function computeClusters(){const zoom=map.getZoom();clusterLayer.clearLayers();if(zoom>=5) return 0;const groups=[];const threshold=zoom<=2?32:16;for(const s of state){const mid=s.path[Math.floor(s.path.length/2)]||s.route.from;let found=null;for(const g of groups){if(haversineKm(g.center,mid)<threshold){found=g;break}}if(found){found.items.push(s);found.center=[(found.center[0]*(found.items.length-1)+mid[0])/found.items.length,(found.center[1]*(found.items.length-1)+mid[1])/found.items.length]}else groups.push({center:mid,items:[s]})}groups.forEach(g=>{const label=L.divIcon({className:'',html:`<div class="cluster-label">${g.items.length} loads</div>`,iconSize:[50,18],iconAnchor:[25,9]});L.marker(g.center,{icon:label,interactive:false}).addTo(clusterLayer)});return groups.length}
+function buildHeatmap(){heatLayer.clearLayers();const hubs=[[41.8781,-87.6298],[43.6532,-79.3832],[49.2827,-123.1207],[52.5200,13.4050],[48.8566,2.3522],[51.5072,-0.1276],[33.7490,-84.3880],[34.0522,-118.2437],[45.5017,-73.5673],[51.0447,-114.0719],[53.5461,-113.4938],[39.7392,-104.9903]];hubs.forEach((p,i)=>{const a=.05+(i%4)*.02;L.circle(p,{radius:220000+i*12000,color:'rgba(249,115,22,0.10)',weight:0,fillColor:'rgba(249,115,22,0.10)',fillOpacity:a}).addTo(heatLayer);L.circle(p,{radius:90000,color:'rgba(251,146,60,0.08)',weight:0,fillColor:'rgba(251,146,60,0.08)',fillOpacity:a+.01}).addTo(heatLayer)})}
+function renderTable(){tbody.innerHTML=state.map((s,idx)=>`<tr data-index="${idx}"><td><span class="dot" style="background:${s.route.color}"></span>${s.route.name}</td><td>${fmtKm(s.totalKm)}</td><td><span class="status">IN TRANSIT</span></td></tr>`).join('');tbody.querySelectorAll('tr').forEach(r=>r.addEventListener('click',()=>{selectedRouteIndex=Number(r.dataset.index);const s=state[selectedRouteIndex];const p=motionState(s,performance.now()).progress;map.fitBounds(s.poly.getBounds().pad(.18),{animate:true,duration:.7});renderPanels(s,p)}))}
+function addRoute(route,idx,path){const cum=cumulativeDistances(path);const totalKm=cum[cum.length-1];const speedKmh=40+(idx%6)*3+(idx%3)*1.2;const etaHours=totalKm/speedKmh;const poly=L.polyline(path,{color:route.color,weight:3,opacity:.78,lineCap:'round',lineJoin:'round'}).addTo(routeLayer);poly.bindTooltip(`${route.name}<br>${fmtKm(totalKm)} • ETA ${fmtETA(etaHours)}`,{sticky:true,className:'route-tip'});L.marker(route.from,{icon:makeStopIcon('start')}).addTo(routeLayer);L.marker(route.to,{icon:makeStopIcon('end')}).addTo(routeLayer);const node=L.marker(route.from,{icon:makeDotIcon(0)}).addTo(dotLayer);state.push({route,path,cum,totalKm,speedKmh,etaHours,poly,node,index:idx,journeyMs:clamp(totalKm*32,80000,220000),pauseMs:12000+(idx%5)*600,offsetMs:(idx%11)*2900+Math.random()*6000})}
+function motionState(s,now){const cycle=s.journeyMs*2+s.pauseMs*2;const local=(now+s.offsetMs)%cycle;if(local<s.journeyMs){const t=ease(local/s.journeyMs);return{progress:t,dir:1,phase:'forward'}}if(local<s.journeyMs+s.pauseMs){return{progress:1,dir:1,phase:'pause-end'}}if(local<s.journeyMs+s.pauseMs+s.journeyMs){const t=ease((local-s.journeyMs-s.pauseMs)/s.journeyMs);return{progress:1-t,dir:-1,phase:'backward'}}return{progress:0,dir:-1,phase:'pause-start'}}
+function syncDot(s,m){const pos=m.progress*(s.path.length-1);const i=Math.max(1,Math.floor(pos));const a=s.path[m.dir===1?i-1:Math.min(i+1,s.path.length-1)]||s.path[0];const b=s.path[m.dir===1?i:Math.max(i-1,0)]||s.path[s.path.length-1];const hd=headingDeg(a,b);s.node.setIcon(makeDotIcon(hd))}
+async function init(){for(let i=0;i<routes.length;i++){const route=routes[i];const base=await fetchRouteGeometry(route.from,route.to);let path=base;const trafficScore=clamp(.18+(i%7)*.08+(i%3)*.04,.1,.88);if(trafficScore>.42){const mid=[(route.from[0]+route.to[0])/2,(route.from[1]+route.to[1])/2];const dx=route.to[1]-route.from[1],dy=route.to[0]-route.from[0],len=Math.sqrt(dx*dx+dy*dy)||1,nx=-dy/len,ny=dx/len,offset=(i%2===0?1:-1)*(0.42+(i%4)*.12);const detour=[mid[0]+ny*offset,mid[1]+nx*offset];const leg1=await fetchRouteGeometry(route.from,detour);const leg2=await fetchRouteGeometry(detour,route.to);const detourPath=[...leg1.slice(0,-1),...leg2];const baseKm=cumulativeDistances(base).at(-1)||haversineKm(route.from,route.to);const detourKm=cumulativeDistances(detourPath).at(-1)||baseKm;if(detourKm/baseKm*(1+trafficScore*.22)<1.22) path=detourPath}addRoute(route,i,path)}buildHeatmap();document.getElementById('summary-load').textContent=`${Math.min(99,Math.round(68+state.length*.9))}%`;document.getElementById('summary-traffic').textContent='LIVE';document.getElementById('tb-loads').textContent=state.length;document.getElementById('tb-trucks').textContent=state.length;document.getElementById('tb-eta').textContent=fmtETA(state.reduce((x,y)=>x+y.etaHours,0)/state.length);renderTable();const s=state[0];const m=motionState(s,performance.now());renderPanels(s,m.progress);requestAnimationFrame(animate)}
+function animate(now){for(const s of state){const m=motionState(s,now);const d=s.totalKm*m.progress;s.node.setLatLng(pointAtDistance(s.path,s.cum,d));syncDot(s,m);if(s.index===selectedRouteIndex) renderPanels(s,m.progress)}renderTable();document.getElementById('tb-clusters').textContent=String(computeClusters());requestAnimationFrame(animate)}
+map.on('zoomend moveend',computeClusters);init();
+</script>
+</body>
+</html>
